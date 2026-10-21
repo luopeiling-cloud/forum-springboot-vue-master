@@ -2,8 +2,6 @@
 
 基于 **Spring Cloud 微服务架构**的校园论坛移动端 App 后端 + uni-app 前端，支持图文发帖、评论互动、点赞收藏、关注、WebSocket 私信、ES 全文检索。
 
-> 由 [烟火平台](https://gitee.com/xzjsccz/forum_dev) 改造而来，包名/模块名/业务已全部替换为 forum 校园论坛。
-
 ## 功能
 
 - 图文发帖（多图直传七牛云对象存储）、分类/标签、浏览计数
@@ -58,4 +56,4 @@ docker compose pull && docker compose up -d
 
 详见 `deploy/部署说明.md`。
 
-> 上传接口要求登录；短信/邮件验证码接口预留未启用。
+> 短信/邮件验证码接口预留未启用。
