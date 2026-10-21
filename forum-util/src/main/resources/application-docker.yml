@@ -1,0 +1,34 @@
+# Docker 容器环境配置（docker compose 中通过 SPRING_PROFILES_ACTIVE=docker 激活）
+spring:
+  cloud:
+    nacos:
+      discovery:
+        server-addr: nacos:8848
+        ip: ${HOSTNAME:}  # register container hostname, overrides base 127.0.0.1
+
+  servlet:
+    multipart:
+      max-file-size: 1024MB
+      max-request-size: 1024MB
+
+  redis:
+    database: 0
+    host: redis
+    port: 6379
+    password: # 密码（默认为空）
+    timeout: 6000ms
+    jedis:
+      pool:
+        max-active: 1000
+        max-wait: -1ms
+        max-idle: 10
+        min-idle: 5
+
+qiNiuYun:
+  domain: tmo6yqvdl.hn-bkt.clouddn.com  # 外链域名（公开空间匿名读取）
+  # 容器内通过环境变量注入密钥
+  accessKey: ${QINIU_ACCESS_KEY:}
+  secretKey: ${QINIU_SECRET_KEY:}
+  bucketName: forum-photo  # S3 协议空间
+  s3Endpoint: s3.cn-south-1.qiniucs.com  # S3 协议端点（华南）
+  region: cn-south-1

@@ -1,0 +1,38 @@
+server:
+  port: 8805
+
+spring:
+  application:
+    name: forum-util
+  cloud:
+    nacos:
+      discovery:
+        server-addr: localhost:8848
+        ip: 127.0.0.1  # pin local registration IP to avoid WSL2/Docker virtual adapter (192.168.x) breaking Feign
+  servlet:
+    multipart:
+      max-file-size: 1024MB
+      max-request-size: 1024MB
+
+  redis:
+    database: 0
+    host: localhost
+    port: 6379
+    password: # 密码（默认为空）
+    timeout: 6000ms  # 连接超时时长（毫秒）
+    jedis:
+      pool:
+        max-active: 1000  # 连接池最大连接数（使用负值表示没有限制）
+        max-wait: -1ms      # 连接池最大阻塞等待时间（使用负值表示没有限制）
+        max-idle: 10      # 连接池中的最大空闲连接
+        min-idle: 5       # 连接池中的最小空闲连接
+
+qiNiuYun:
+  domain: tmo6yqvdl.hn-bkt.clouddn.com  # 外链域名（公开空间匿名读取）
+  # 密钥走环境变量注入（QINIU_ACCESS_KEY / QINIU_SECRET_KEY）：
+  # 本地 IDE 运行需在 Run Configuration 中配置这两个环境变量；docker 版经 .env（gitignore）注入同名变量
+  accessKey: ${QINIU_ACCESS_KEY:}
+  secretKey: ${QINIU_SECRET_KEY:}
+  bucketName: forum-photo  # S3 协议空间
+  s3Endpoint: s3.cn-south-1.qiniucs.com  # S3 协议端点（华南）
+  region: cn-south-1

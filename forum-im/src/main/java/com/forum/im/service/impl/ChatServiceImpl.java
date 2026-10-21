@@ -1,0 +1,139 @@
+package com.forum.im.service.impl;
+
+import cn.hutool.json.JSONUtil;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.forum.common.auth.AuthContextHolder;
+import com.forum.common.constant.ImConstant;
+import com.forum.common.utils.ConvertUtils;
+import com.forum.common.utils.RedisUtils;
+import com.forum.common.im.Message;
+import com.forum.im.entity.CountMessage;
+import com.forum.im.factory.MessageFactory;
+import com.forum.im.service.ChatService;
+import com.forum.im.service.ChatUserRelationService;
+import com.forum.im.websocket.WebSocketServer;
+import com.forum.xo.dao.ChatDao;
+import com.forum.xo.dao.UserDao;
+import com.forum.xo.entity.Chat;
+import com.forum.xo.entity.ChatUserRelation;
+import com.forum.xo.entity.User;
+import com.forum.xo.vo.ChatUserRelationVo;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+
+@Service
+public class ChatServiceImpl extends ServiceImpl<ChatDao, Chat> implements ChatService {
+
+    @Autowired
+    WebSocketServer webSocketServer;
+
+    @Autowired
+    RedisUtils redisUtils;
+
+    @Autowired
+    ChatUserRelationService chatUserRelationService;
+
+    @Autowired
+    UserDao userDao;
+
+
+    @Override
+    public void sendMsg(Message message) {
+        webSocketServer.sendInfo(message);
+        MessageFactory messageFactory = null;
+
+        // 过滤发送的请求类型
+        switch (message.getMsgType()) {
+            case 0:
+                messageFactory = new CountMessageServiceImpl(redisUtils);
+                messageFactory.sendMessage(message);
+                break;
+            case 1:
+                chatUserRelationService.sendMessage(message);
+                break;
+            default:
+                break;
+        }
+
+    }
+
+    @Override
+    public CountMessage getCountMessage() {
+        String currentUid = AuthContextHolder.getUserId();
+        String messageCountKey = ImConstant.MESSAGE_COUNT_KEY + currentUid;
+        if (Boolean.FALSE.equals(redisUtils.hasKey(messageCountKey))) {
+            CountMessage countMessage = new CountMessage();
+            countMessage.setFollowCount(0L);
+            countMessage.setCommentCount(0L);
+            countMessage.setLikeOrCollectionCount(0L);
+            return countMessage;
+        }
+        String json = redisUtils.get(messageCountKey);
+        return JSONUtil.toBean(json, CountMessage.class);
+    }
+
+    @Override
+    public List<ChatUserRelationVo> getChatUserList() {
+        String currentUid = AuthContextHolder.getUserId();
+        List<ChatUserRelation> chatUserRelationList = chatUserRelationService.list(new QueryWrapper<ChatUserRelation>().eq("accept_uid", currentUid).orderByDesc("create_date"));
+        Set<String> uids = chatUserRelationList.stream().map(ChatUserRelation::getSendUid).collect(Collectors.toSet());
+        Map<String, User> userMap = userDao.selectBatchIds(uids).stream().collect(Collectors.toMap(User::getId, user -> user));
+        List<ChatUserRelationVo> result = new ArrayList<>();
+        chatUserRelationList.forEach(item -> {
+            ChatUserRelationVo chatUserRelationVo = ConvertUtils.sourceToTarget(item, ChatUserRelationVo.class);
+            User user = userMap.get(item.getSendUid());
+            chatUserRelationVo.setUid(user.getId());
+            chatUserRelationVo.setUsername(user.getUsername());
+            chatUserRelationVo.setAvatar(user.getAvatar());
+            result.add(chatUserRelationVo);
+        });
+        return result;
+    }
+
+    @Override
+    public Page<Chat> getAllChatRecord(long currentPage, long pageSize, String acceptUid) {
+        String currentUid = AuthContextHolder.getUserId();
+        QueryWrapper<Chat> queryWrapper = new QueryWrapper<Chat>()
+                .and(e -> e.eq("send_uid", currentUid).eq("accept_uid", acceptUid))
+                .or(e->e.eq("send_uid", acceptUid).eq("accept_uid", currentUid))
+                .orderByDesc("timestamp");
+        return this.page(new Page<>((int) currentPage, (int) pageSize), queryWrapper);
+    }
+
+    @Override
+    public void clearMessageCount(String sendUid,Integer type) {
+        if(type==3){
+            String currentUid = AuthContextHolder.getUserId();
+            ChatUserRelation chatUserRelation = chatUserRelationService.getOne(new QueryWrapper<ChatUserRelation>().eq("send_uid", sendUid).eq("accept_uid", currentUid));
+            if(chatUserRelation!=null){
+                chatUserRelation.setCount(0);
+                chatUserRelationService.updateById(chatUserRelation);
+            }
+        }else{
+            String messageCountKey = ImConstant.MESSAGE_COUNT_KEY + sendUid;
+            String json = redisUtils.get(messageCountKey);
+            CountMessage countMessage = JSONUtil.toBean(json, CountMessage.class);
+            switch (type){
+                case 0:
+                    countMessage.setLikeOrCollectionCount(0L);
+                    break;
+                case 1:
+                    countMessage.setCommentCount(0L);
+                    break;
+                default:
+                    countMessage.setFollowCount(0L);
+                    break;
+            }
+            redisUtils.set(messageCountKey, JSONUtil.toJsonStr(countMessage));
+        }
+    }
+}

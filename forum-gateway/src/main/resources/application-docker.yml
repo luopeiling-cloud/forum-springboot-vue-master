@@ -1,0 +1,43 @@
+# Docker 容器环境配置（docker compose 中通过 SPRING_PROFILES_ACTIVE=docker 激活）
+spring:
+  cloud:
+    nacos:
+      discovery:
+        server-addr: nacos:8848
+        ip: ${HOSTNAME:}  # register container hostname, overrides base 127.0.0.1
+    gateway:
+      discovery:
+        locator:
+          enabled: true
+          lower-case-service-id: true
+      routes:
+        - id: forum-auth
+          uri: lb://forum-auth
+          predicates:
+            - Path=/api/auth/**
+          filters:
+            - RewritePath=/api/auth/(?<segment>.*),/auth/$\{segment}
+        - id: forum-im
+          uri: lb://forum-im
+          predicates:
+            - Path=/api/im/**
+          filters:
+            - RewritePath=/api/im/(?<segment>.*),/im/$\{segment}
+        - id: forum-platform
+          uri: lb://forum-platform
+          predicates:
+            - Path=/api/platform/**
+          filters:
+            - RewritePath=/api/platform/(?<segment>.*),/platform/$\{segment}
+        - id: forum-search
+          uri: lb://forum-search
+          predicates:
+            - Path=/api/search/**
+          filters:
+            - RewritePath=/api/search/(?<segment>.*),/search/$\{segment}
+        - id: forum-util
+          uri: lb://forum-util
+          predicates:
+            - Path=/api/util/**
+          filters:
+            - RewritePath=/api/util/(?<segment>.*),/util/$\{segment}

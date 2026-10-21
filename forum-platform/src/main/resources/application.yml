@@ -1,0 +1,43 @@
+
+spring:
+  application:
+    name: forum-platform
+  profiles:
+    active: test
+  cloud:
+    nacos:
+      discovery:
+        server-addr: localhost:8848
+        ip: 127.0.0.1  # pin local registration IP to avoid WSL2/Docker virtual adapter (192.168.x) breaking Feign
+
+feign:
+  client:
+    config:
+      default:
+        # util 七牛云 S3 上传耗时较长，Ribbon 默认 1s 读超时会导致 Feign 提前中断（发布帖报"添加图片失败"），必须调大
+        connectTimeout: 5000
+        readTimeout: 60000
+
+server:
+  port: 8803
+  servlet:
+    context-path: /platform
+    multipart:
+      enabled: true # 启用上传处理，默认是true
+      file-size-threshold: 1MB # 当上传文件达到1MB的时候进行磁盘写入
+      max-request-size: 100MB # 设置最大的请求文件的大小
+      max-file-size: 2MB # 设置单个文件的最大长度
+
+
+### 调度中心部署根地址 [选填]：如调度中心集群部署存在多个地址则用逗号分隔。执行器将会使用该地址进行"执行器心跳注册"和"任务结果回调"；为空则关闭自动注册；
+forum:
+  admin:
+      addresses: http://127.0.0.1:8080/xxl-job-admin
+  ### 执行器通讯TOKEN [选填]：非空时启用；
+  accessToken: default_token
+  executor:
+     appname: forum-xxl-job-executor
+     ip: 127.0.0.1
+     port: 9998
+     logpath: ./data/applogs/xxl-job/jobhandler
+     logretentiondays: 30
