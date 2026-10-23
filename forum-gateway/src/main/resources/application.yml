@@ -1,0 +1,13 @@
+spring:
+  application:
+    name: forum-gateway
+  profiles:
+    active: dev
+  cloud:
+    nacos:
+      discovery:
+        server-addr: localhost:8848
+        ip: 127.0.0.1  # pin local registration IP to avoid WSL2/Docker virtual adapter (192.168.x) breaking Feign
+
+server:
+  port: 88

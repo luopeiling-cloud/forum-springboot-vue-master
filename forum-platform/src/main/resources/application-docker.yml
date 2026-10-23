@@ -1,0 +1,55 @@
+# Docker 容器环境配置（docker compose 中通过 SPRING_PROFILES_ACTIVE=docker 激活）
+spring:
+  cloud:
+    nacos:
+      discovery:
+        server-addr: nacos:8848
+        ip: ${HOSTNAME:}  # register container hostname, overrides base 127.0.0.1
+
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://mysql:3306/forum-test?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai&nullCatalogMeansCurrent=true
+    username: root
+    password: 564564
+
+  redis:
+    database: 0
+    host: redis
+    port: 6379
+    password: # 密码（默认为空）
+    timeout: 6000ms
+    jedis:
+      pool:
+        max-active: 1000
+        max-wait: -1ms
+        max-idle: 10
+        min-idle: 5
+
+mybatis-plus:
+  mapper-locations: classpath*:/mapper/*.xml
+  global-config:
+    db-config:
+      id-type: ASSIGN_ID
+    banner: false
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+    map-underscore-to-camel-case: true
+    cache-enabled: false
+    call-setters-on-nulls: true
+    jdbc-type-for-null: 'null'
+  configuration-properties:
+    prefix:
+    blobType: BLOB
+    boolValue: TRUE
+
+# XXL-Job 执行器（内嵌）：容器内 ip 必须为容器名，调度中心才能回调执行器
+forum:
+  admin:
+    addresses: http://xxl-job-admin:8080/xxl-job-admin
+  accessToken: default_token
+  executor:
+    appname: forum-xxl-job-executor
+    ip: forum-platform
+    port: 9998
+    logpath: ./data/applogs/xxl-job/jobhandler
+    logretentiondays: 30

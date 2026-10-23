@@ -1,0 +1,84 @@
+package com.forum.platform.controller;
+
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.forum.common.result.Result;
+import com.forum.common.validator.ValidatorUtils;
+import com.forum.common.validator.group.AddGroup;
+import com.forum.common.validator.group.UpdateGroup;
+import com.forum.platform.service.AlbumService;
+import com.forum.xo.dto.AlbumDTO;
+import com.forum.xo.entity.Album;
+import com.forum.xo.vo.AlbumVo;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+@RequestMapping("/album")
+@RestController
+public class AlbumController {
+
+    @Autowired
+    AlbumService albumService;
+
+    /**
+     * 根据用户id获取专辑
+     * @param currentPage 当前页
+     * @param pageSize 分页数
+     * @param userId 用户id
+     * @return 专辑数
+     */
+    @RequestMapping("getAlbumPageByUserId/{currentPage}/{pageSize}")
+    public Result<?> getAlbumPageByUserId(@PathVariable long currentPage, @PathVariable long pageSize,String userId){
+        Page<Album> page =  albumService.getAlbumPageByUserId(currentPage,pageSize,userId);
+        return Result.ok(page);
+    }
+
+    /**
+     * 保存专辑
+     * @param albumDTO 专辑实体
+     * @return success
+     */
+    @RequestMapping("saveAlbumByDTO")
+    public Result<?> saveAlbumByDTO(@RequestBody AlbumDTO albumDTO) {
+        ValidatorUtils.validateEntity(albumDTO, AddGroup.class);
+        albumService.saveAlbumByDTO(albumDTO);
+        return Result.ok();
+    }
+
+
+    /**
+     * 根据专辑id获取专辑
+     * @param albumId 专辑id
+     * @return 专辑实体
+     */
+    @RequestMapping("getAlbumById")
+    public Result<?> getAlbumById(String albumId) {
+        AlbumVo albumVo = albumService.getAlbumById(albumId);
+        return Result.ok(albumVo);
+    }
+
+    /**
+     * 根据专辑id删除专辑
+     * @param albumId 专辑id
+     * @return success
+     */
+    @RequestMapping("deleteAlbumById")
+    public Result<?> deleteAlbumById(String albumId) {
+        albumService.deleteAlbumById(albumId);
+        return Result.ok();
+    }
+
+    /**
+     * 更新专辑
+     * @param albumDTO 专辑实体
+     * @return success
+     */
+    @RequestMapping("updateAlbumByDTO")
+    public Result<?> updateAlbumByDTO(@RequestBody AlbumDTO albumDTO) {
+        ValidatorUtils.validateEntity(albumDTO, UpdateGroup.class);
+        albumService.updateAlbumByDTO(albumDTO);
+        return Result.ok();
+    }
+}

@@ -1,0 +1,46 @@
+package com.forum.search.controller;
+
+import com.forum.common.result.Result;
+import com.forum.search.service.RecordService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+@RequestMapping("/search/record")
+@RestController
+public class RecordController {
+
+    @Autowired
+    RecordService recordService;
+
+    /**
+     * 获取搜索记录
+     * @param keyword  关键词
+     * @return 记录集合
+     */
+    @GetMapping("getRecordByKeyWord")
+    public Result<?> getRecordByKeyWord(String keyword){
+        return Result.ok(recordService.getRecordByKeyWord(keyword));
+    }
+
+    /**
+     * 热门关键词
+     * @return list
+     */
+    @GetMapping("getHotRecord")
+    public Result<?> getHotRecord(){
+        return Result.ok(recordService.getHotRecord());
+    }
+
+    /**
+     * 增加搜索记录
+     * @param keyword 关键词
+     * @return success
+     */
+    @RequestMapping("addRecord")
+    public Result<?> addRecord(String keyword){
+        recordService.addRecord(keyword);
+        return Result.ok();
+    }
+}
